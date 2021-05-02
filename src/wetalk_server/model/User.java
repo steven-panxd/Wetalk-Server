@@ -180,4 +180,9 @@ public class User implements Comparable<User> {
 	public int hashCode() {
 		return Objects.hash(id, username, password);
 	}
+
+    public void logout() {
+		String cacheKey = Global.getInstance().getProperty("loginUsersPrefix");
+		Cache.getInstance().sRem(cacheKey, String.valueOf(this.id));
+    }
 }

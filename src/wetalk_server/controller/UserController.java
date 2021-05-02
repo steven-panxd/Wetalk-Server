@@ -13,89 +13,125 @@ import java.util.List;
 
 public class UserController {
 
-    public static void register(MyClient client, String username, String password) {
-        User.register(username, password);
-        client.sendDataToClient("<Success>:");
+    public static HashMap<String, String> getGenericSucceedResponse(String data) {
+        HashMap<String, String> response = new HashMap<>();
+        response.put("status", Global.getInstance().getProperty("succeedPrefix"));
+        response.put("data", data);
+        return response;
     }
 
-    public static void login(MyClient client, String username, String password) {
-        User user = User.login(username, password);
-        String cacheKey = Global.getInstance().getProperty("loginUsersPrefix");
-//        HashMap<String, String> mapData = new HashMap<>();
-//        mapData.put("callback", Global.getInstance().getProperty("loginFinishedPrefix"));
+    public static HashMap<String, String> getGenericFailResponse(String message) {
+        HashMap<String, String> response = new HashMap<>();
+        HashMap<String, String> responseData = new HashMap<>();
+        responseData.put("message", message);
+        response.put("status", Global.getInstance().getProperty("failPrefix"));
+        response.put("data", Json.getInstance().toJson(responseData));
+        return response;
+    }
 
-        if(user == null) {
-            client.sendDataToClient(Global.getInstance().getProperty("failPrefix") + ":Username or password is wrong");
-        } else if (Cache.getInstance().sIsMember(cacheKey, String.valueOf(user.getID()))) {
-            client.sendDataToClient(Global.getInstance().getProperty("failPrefix") + ":You've already login in another client");
-        } else {
-            String accessToken = Token.getInstance().getUserToken(String.valueOf(user.getID()));
-            Cache.getInstance().sAdd(cacheKey, String.valueOf(user.getID()));
-            client.sendDataToClient(Global.getInstance().getProperty("succeedPrefix") + ":" + accessToken + ":" + user.getID() + ":" + user.getUsername());
+    public static HashMap<String, String> register(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        String username = requestData.getOrDefault("username", "");
+        String password = requestData.getOrDefault("password", "");
+
+        if(username.length() < 6 || username.length() > 32) {
+            return UserController.getGenericFailResponse("Your username must be between 6-32 characters.");
         }
+
+        if(password.length() < 6 || password.length() > 32) {
+            return UserController.getGenericFailResponse("Your password must be between 6-32 characters.");
+        }
+
+        User user = User.getUserByUsername(username);
+        if(user != null) {
+            return UserController.getGenericFailResponse("The username has been taken, please use another one.");
+        }
+
+        User.register(username, password);
+        HashMap<String, String> responseData = new HashMap<>();
+        responseData.put("message", "Signed up successfully, please go back and sign in.");
+        return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
-    public static void logout(MyClient client, String accessToken) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
+    public static HashMap<String, String> login(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        String username = requestData.get("username");
+        String password = requestData.get("password");
+        if(username == null || password == null) {
+            return UserController.getGenericFailResponse("Please input username or password.");
+        }
+
+        User user = User.login(username, password);
+        if(user == null) {
+            return UserController.getGenericFailResponse("Username or password is wrong.");
+        }
+
         String cacheKey = Global.getInstance().getProperty("loginUsersPrefix");
-        Cache.getInstance().sRem(cacheKey, String.valueOf(user.getID()));
+        if(Cache.getInstance().sIsMember(cacheKey, String.valueOf(user.getID()))) {
+            return UserController.getGenericFailResponse("You've already signed in on another client.");
+        }
+
+        String accessToken = Token.getInstance().getUserToken(String.valueOf(user.getID()));
+        Cache.getInstance().sAdd(cacheKey, String.valueOf(user.getID()));
+        HashMap<String, String> responseData = new HashMap<>();
+        responseData.put("accessToken", accessToken);
+        responseData.put("id", String.valueOf(user.getID()));
+        return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
-    public static void sendMessage(MyClient client, String accessToken, String receiverID, String content, String sendTimeStamp) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
-        Message sentMessage = user.sendMessage(content, Integer.parseInt(receiverID), Long.parseLong(sendTimeStamp));
+    public static HashMap<String, String> logout(MainController.ChatConnection conn) {
+        conn.user.logout();
+        return UserController.getGenericSucceedResponse("");
+    }
+
+    public static HashMap<String, String> sendMessage(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        String content = requestData.getOrDefault("content", "");
+        int receiverID = Integer.parseInt(requestData.get("receiverID"));
+        User receiver = User.getUserByID(receiverID);
+        long sendTimeStamp = Long.parseLong(requestData.get("sendTime"));
+
+        if (receiver == null) {
+            return UserController.getGenericFailResponse("Receiver does not exist.");
+        }
+
+        if (!conn.user.isFriendOf(receiver)) {
+            return UserController.getGenericFailResponse(receiver.getUsername() + " is not in your friend.");
+        }
+
+        Message sentMessage = conn.user.sendMessage(content, receiverID, sendTimeStamp);
         String cacheKey = Global.getInstance().getProperty("newMessageCachePrefix") + receiverID;
         Cache.getInstance().push(cacheKey, String.valueOf(sentMessage.getID()));
-        client.sendDataToClient(Global.getInstance().getProperty("succeedPrefix"));
+        return UserController.getGenericSucceedResponse("");
     }
 
-    public static void addFriend(MyClient client, String accessToken, String friendUsername) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
+    public static HashMap<String, String> addFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        String friendUsername = requestData.get("friendUsername");
         User friend = User.getUserByUsername(friendUsername);
 
-        HashMap<String, String> mapData = new HashMap<>();
-
         if(friend == null) {
-            mapData.put("status", Global.getInstance().getProperty("failPrefix"));
-            mapData.put("data",  "Username does not exist");
-        } else if (user.getID() == friend.getID()) {
-            mapData.put("status", Global.getInstance().getProperty("failPrefix"));
-            mapData.put("data", "You can not add yourself.");
-        } else if (user.isFriendOf(friend)) {
-            mapData.put("status", Global.getInstance().getProperty("failPrefix"));
-            mapData.put("data", "You were friends.");
-        } else if (user.hasSentFriendRequest(friend)) {
-            mapData.put("status", Global.getInstance().getProperty("failPrefix"));
-            mapData.put("data", "You have already sent the request, please wait for confirmation!");
+            return UserController.getGenericFailResponse("User " + friendUsername + " does not exist.");
+        } else if (conn.user.getID() == friend.getID()) {
+            return UserController.getGenericFailResponse("You can not add yourself.");
+        } else if (conn.user.isFriendOf(friend)) {
+            return UserController.getGenericFailResponse("You were friends.");
+        } else if (conn.user.hasSentFriendRequest(friend)) {
+            return UserController.getGenericFailResponse("You have already sent the request, please wait for confirmation!");
         } else {
-            mapData.put("status", Global.getInstance().getProperty("succeedPrefix"));
-            user.addFriend(friend);
+            conn.user.addFriend(friend);
             String cacheName = Global.getInstance().getProperty("newAddFriendRequestPrefix") + friend.getID();
-            Cache.getInstance().push(cacheName, String.valueOf(user.getID()));
+            Cache.getInstance().push(cacheName, String.valueOf(conn.user.getID()));
+            return UserController.getGenericSucceedResponse("Request sent, please wait for confirmation.");
         }
-
-        String data = Json.getInstance().toJson(mapData);
-        client.sendDataToClient(data);
     }
 
-    public static void getFriendList(MyClient client, String accessToken) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
-        ArrayList<User> friendList = user.getFriendsList(0);
-        // sample response data = "<Success>:1,username1:2,username2"
-        String data = Global.getInstance().getProperty("succeedPrefix");
-        for (User friend : friendList) {
-            data += ":";
-            data += friend.getID();
-            data += ",";
-            data += friend.getUsername();
-        }
-        client.sendDataToClient(data);
+    public static HashMap<String, String> getFriendList(MainController.ChatConnection conn) {
+        ArrayList<User> friendList = conn.user.getFriendsList(0);
+        HashMap<String, String> responseData = new HashMap<>();
+        responseData.put("friendList", Json.getInstance().toJson(friendList));
+        return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
-    public static void getLatestMessage(MyClient client, String accessToken) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
+    public static HashMap<String, String> getLatestData(MainController.ChatConnection conn) {
 
-        String messageKey = Global.getInstance().getProperty("newMessageCachePrefix") + user.getID();
+        String messageKey = Global.getInstance().getProperty("newMessageCachePrefix") + conn.user.getID();
         ArrayList<Message> newMessages = new ArrayList<>();
         List<String> messageIDs = Cache.getInstance().popAll(messageKey);
         for(String messageID: messageIDs) {
@@ -103,7 +139,7 @@ public class UserController {
             newMessages.add(message);
         }
 
-        String addFriendRequestKey = Global.getInstance().getProperty("newAddFriendRequestPrefix") + user.getID();
+        String addFriendRequestKey = Global.getInstance().getProperty("newAddFriendRequestPrefix") + conn.user.getID();
         ArrayList<User> addFriendRequesters = new ArrayList<>();
         List<String> addFriendRequesterIDs = Cache.getInstance().popAll(addFriendRequestKey);
         for(String addFriendRequesterID : addFriendRequesterIDs) {
@@ -111,7 +147,7 @@ public class UserController {
             addFriendRequesters.add(addFriendRequester);
         }
 
-        String acceptedUserKey = Global.getInstance().getProperty("newAcceptFriendPrefix") + user.getID();
+        String acceptedUserKey = Global.getInstance().getProperty("newAcceptFriendPrefix") + conn.user.getID();
         ArrayList<User> acceptedUsers = new ArrayList<>();
         List<String> acceptedUserIDs = Cache.getInstance().popAll(acceptedUserKey);
         for(String acceptedUserID : acceptedUserIDs) {
@@ -119,7 +155,7 @@ public class UserController {
             acceptedUsers.add(acceptedUser);
         }
 
-        String rejectedUserKey = Global.getInstance().getProperty("newRejectFriendPrefix") + user.getID();
+        String rejectedUserKey = Global.getInstance().getProperty("newRejectFriendPrefix") + conn.user.getID();
         ArrayList<User> rejectedUsers = new ArrayList<>();
         List<String> rejectedUserIDs = Cache.getInstance().popAll(rejectedUserKey);
         for(String requestUserID : rejectedUserIDs) {
@@ -127,30 +163,25 @@ public class UserController {
             rejectedUsers.add(rejectedUser);
         }
 
-        HashMap<String, String> data = new HashMap<>();
-        data.put("status", Global.getInstance().getProperty("succeedPrefix"));
-        data.put("newMessages", Json.getInstance().toJson(newMessages));
-        data.put("addFriendRequesters", Json.getInstance().toJson(addFriendRequesters));
-        data.put("acceptedUsers", Json.getInstance().toJson(acceptedUsers));
-        data.put("rejectedUsers", Json.getInstance().toJson(rejectedUsers));
-        String responseData = Json.getInstance().toJson(data);
-        System.out.println(responseData);
-        client.sendDataToClient(responseData);
+        HashMap<String, String> responseData = new HashMap<>();
+        responseData.put("newMessages", Json.getInstance().toJson(newMessages));
+        responseData.put("addFriendRequesters", Json.getInstance().toJson(addFriendRequesters));
+        responseData.put("acceptedUsers", Json.getInstance().toJson(acceptedUsers));
+        responseData.put("rejectedUsers", Json.getInstance().toJson(rejectedUsers));
+        return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
-    public static void acceptAddFriend(MyClient client, String accessToken, String friendID) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
-        User acceptedUser = User.getUserByID(Integer.parseInt(friendID));
-        user.acceptFriend(acceptedUser);
-        String data = Global.getInstance().getProperty("succeedPrefix");
-        client.sendDataToClient(data);
+    public static HashMap<String, String> acceptFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        int acceptedFriendID = Integer.parseInt(requestData.get("acceptedFriendID"));
+        User acceptedUser = User.getUserByID(acceptedFriendID);
+        conn.user.acceptFriend(acceptedUser);
+        return UserController.getGenericSucceedResponse("");
     }
 
-    public static void rejectAddFriend(MyClient client, String accessToken, String friendID) {
-        User user = Token.getInstance().verifyUserToken(accessToken);
-        User rejectedUser = User.getUserByID(Integer.parseInt(friendID));
-        user.rejectFriend(rejectedUser);
-        String data = Global.getInstance().getProperty("succeedPrefix");
-        client.sendDataToClient(data);
+    public static HashMap<String, String> rejectFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        int acceptedFriendID = Integer.parseInt(requestData.get("rejectedFriendID"));
+        User rejectedUser = User.getUserByID(acceptedFriendID);
+        conn.user.rejectFriend(rejectedUser);
+        return UserController.getGenericSucceedResponse("");
     }
 }
