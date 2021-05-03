@@ -1,7 +1,7 @@
-#Wetalk-Server
+# Wetalk-Server
 A simple chat application on Java. (Server side)
 
-#Dependencies
+# Dependencies
 #### All required jar files are in libs folder
 - [Kyronet](https://github.com/EsotericSoftware/kryonet "Kyronet") (Java TCP/UDP server/client library)
 - [Gson](https://github.com/google/gson "Gson") (Json serializer)
@@ -9,7 +9,7 @@ A simple chat application on Java. (Server side)
 - [SQLite](https://www.sqlite.org/index.html "SQLite") and [SQLite JDBC](https://github.com/xerial/sqlite-jdbc "SQLite JDBC") (Database)
 - [Redis](https://redis.io/ "Redis") and [Jedis](https://github.com/redis/jedis "Jedis") (Cache) // Please install Redis before launching the application
 
-#Sample data format
+# Sample data format
 ### Sample request format (from client to server)
 ```json
 {
