@@ -130,7 +130,6 @@ public class UserController {
     }
 
     public static HashMap<String, String> getLatestData(MainController.ChatConnection conn) {
-
         String messageKey = Global.getInstance().getProperty("newMessageCachePrefix") + conn.user.getID();
         ArrayList<Message> newMessages = new ArrayList<>();
         List<String> messageIDs = Cache.getInstance().popAll(messageKey);
@@ -158,9 +157,17 @@ public class UserController {
         String rejectedUserKey = Global.getInstance().getProperty("newRejectFriendPrefix") + conn.user.getID();
         ArrayList<User> rejectedUsers = new ArrayList<>();
         List<String> rejectedUserIDs = Cache.getInstance().popAll(rejectedUserKey);
-        for(String requestUserID : rejectedUserIDs) {
-            User rejectedUser = User.getUserByID(Integer.parseInt(requestUserID));
+        for(String rejectedUserID : rejectedUserIDs) {
+            User rejectedUser = User.getUserByID(Integer.parseInt(rejectedUserID));
             rejectedUsers.add(rejectedUser);
+        }
+
+        String deletedUserKey = Global.getInstance().getProperty("newDeleteFriendPrefix") + conn.user.getID();
+        ArrayList<User> deletedUsers = new ArrayList<>();
+        List<String> deletedUserIDs = Cache.getInstance().popAll(deletedUserKey);
+        for(String deletedUserID : deletedUserIDs) {
+            User deletedUser = User.getUserByID(Integer.parseInt(deletedUserID));
+            deletedUsers.add(deletedUser);
         }
 
         HashMap<String, String> responseData = new HashMap<>();
@@ -168,6 +175,7 @@ public class UserController {
         responseData.put("addFriendRequesters", Json.getInstance().toJson(addFriendRequesters));
         responseData.put("acceptedUsers", Json.getInstance().toJson(acceptedUsers));
         responseData.put("rejectedUsers", Json.getInstance().toJson(rejectedUsers));
+        responseData.put("deletedUsers", Json.getInstance().toJson(deletedUsers));
         return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
@@ -182,6 +190,18 @@ public class UserController {
         int acceptedFriendID = Integer.parseInt(requestData.get("rejectedFriendID"));
         User rejectedUser = User.getUserByID(acceptedFriendID);
         conn.user.rejectFriend(rejectedUser);
+        return UserController.getGenericSucceedResponse("");
+    }
+
+    public static HashMap<String, String> deleteFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
+        int deletedFriendID = Integer.parseInt(requestData.get("deletedFriendID"));
+        User deletedFriend = User.getUserByID(deletedFriendID);
+        if(!conn.user.isFriendOf(deletedFriend)) {
+            return UserController.getGenericFailResponse("You are not friends.");
+        }
+        conn.user.deleteFriend(deletedFriend);
+        String cacheKey = Global.getInstance().getProperty("newDeleteFriendPrefix") + deletedFriendID;
+        Cache.getInstance().push(cacheKey, String.valueOf(conn.user.getID()));
         return UserController.getGenericSucceedResponse("");
     }
 }

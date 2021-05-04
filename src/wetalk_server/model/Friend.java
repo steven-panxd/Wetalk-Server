@@ -66,6 +66,7 @@ public class Friend {
     public static void deleteFriend(int userID, int friendID) {
         DBUtil db = new DBUtil();
         db.delete("DELETE FROM FRIEND WHERE USER_ID = " + userID + " AND FRIEND_ID = " + friendID);
+        db.delete("DELETE FROM FRIEND WHERE FRIEND_ID = " + userID + " AND USER_ID = " + friendID);
         db.close();
     }
 

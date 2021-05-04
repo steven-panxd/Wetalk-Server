@@ -33,6 +33,8 @@ public class Router {
             mapResponse = UserController.acceptFriend(connection, mapData);
         } else if(connection.requestName.equals(Global.getInstance().getProperty("rejectFriendPrefix"))) {
             mapResponse = UserController.rejectFriend(connection, mapData);
+        } else if(connection.requestName.equals(Global.getInstance().getProperty("deleteFriendPrefix"))) {
+            mapResponse = UserController.deleteFriend(connection, mapData);
         } else {
             HashMap<String, String> mapResponseData = new HashMap<>();
             mapResponseData.put("message", "Unsupported request: " + connection.requestName);

@@ -50,9 +50,10 @@ public class MainController {
                 if(request instanceof String) {
                     HashMap<String, String> mapRequest = Json.getInstance().fromJson((String) request, new TypeToken<HashMap<String, String>>(){}.getType());
                     String accessToken = mapRequest.getOrDefault("accessToken", null);
+                    User user = connection.user;
                     // if access token exists, verify access token
-                    if(accessToken != null) {
-                        User user = Token.getInstance().verifyUserToken(accessToken);
+                    if(user == null && accessToken != null) {
+                        user = Token.getInstance().verifyUserToken(accessToken);
                         // if invalid access token, terminate the request
                         if(user == null) {
                             HashMap<String, String> mapResponse = UserController.getGenericFailResponse("Invalid access token.");
