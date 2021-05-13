@@ -4,11 +4,17 @@ import wetalk_server.utils.Global;
 
 import java.sql.*;
 
+/**
+ * Database util
+ */
 public class DBUtil {
     private final String dbUrl;
     private Connection conn = null;
     private Statement stmt = null;
 
+    /**
+     * Constructor of DBUtil class
+     */
     public DBUtil() {
         this.dbUrl = Global.getInstance().getProperty("dbUrl");
         this.conn = createConnection();  // try to connect the sqlite database, if .db file does not exist, create a new one in the root path.
@@ -65,32 +71,45 @@ public class DBUtil {
         return rs;
     }
 
-    // Initialize tables into the database
-    public void initTables() {
-        // TODO: initTables (Reflection)
-    }
-
-    // return the number of rows effected
+    /**
+     * Insert data
+     * @param sql String sql
+     * @return Return the number of rows effected
+     */
     public int insert(String sql) {
         return this.execWithoutReturnData(sql);
     }
 
-    // return the number of rows effected
+    /**
+     * Update data
+     * @param sql String sql
+     * @return Return the number of rows effected
+     */
     public int update(String sql) {
         return this.execWithoutReturnData(sql);
     }
 
-    // return the number of rows effected
+    /**
+     * Delete data
+     * @param sql String sql
+     * @return Return the number of rows effected
+     */
     public int delete(String sql) {
         return this.execWithoutReturnData(sql);
     }
 
-    // return the result set
+    /**
+     * Select data (query)
+     * @param sql String sql
+     * @return Return a result set
+     */
     public ResultSet select(String sql) {
         return this.execWithReturnData(sql);
     }
 
-    // Close Connection and Statement if not null
+    /**
+     * Close Connection and Statement if they are not null
+     */
     public void close() {
         try {
             if(this.stmt != null) {

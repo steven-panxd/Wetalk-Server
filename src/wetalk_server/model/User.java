@@ -9,7 +9,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Objects;
 
-//done
+/**
+ * User model
+ * Describe a user
+ */
 public class User implements Comparable<User> {
 	@Expose
 	private final int id;
@@ -24,14 +27,26 @@ public class User implements Comparable<User> {
 		this.password = password;
 	}
 
+	/**
+	 * Getter of user's id
+	 * @return user's id
+	 */
 	public int getID() {
 		return this.id;
 	}
 
+	/**
+	 * Getter of user's username
+	 * @return user's username
+	 */
 	public String getUsername() {
 		return this.username;
 	}
 
+	/**
+	 * Modify current user's password
+	 * @param newPassword New password
+	 */
 	public void setPassword(String newPassword) {
 		DBUtil db = new DBUtil();
 		db.update("UPDATE USER SET PASSWORD = '" + newPassword + "' WHERE USERNAME = '" + this.username + "';");
@@ -39,20 +54,37 @@ public class User implements Comparable<User> {
 		this.password = newPassword;
 	}
 
+	/**
+	 * Add a friend
+	 * @param friend User model of another user
+	 */
 	public void addFriend(User friend) {
 		Friend.addFriend(this.id, friend.getID());
 	}
 
+	/**
+	 * Delete a friend
+	 * @param friend User model of another user
+	 */
 	public void deleteFriend(User friend) {
 		Friend.deleteFriend(this.id, friend.getID());
 	}
 
+	/**
+	 * Get latest friend list
+	 * @param pageNum Page number
+	 */
 	public ArrayList<User> getFriendsList(int pageNum) {
 		// TODO: pagination
 		return Friend.getFriends(this.id, Integer.parseInt(Global.getInstance().getProperty("numPerPage")), pageNum);
 	}
 
-	// return User object id if login, otherwise return 0
+	/**
+	 * Login and store current user to logined user set in Cache
+	 * @param username String username
+	 * @param password String password
+	 * @return Instance of the user
+	 */
 	public static User login(String username, String password) {
 		DBUtil db = new DBUtil();
 
@@ -79,13 +111,22 @@ public class User implements Comparable<User> {
 		return user;
 	}
 
-	// return true if success, otherwise false.
+	/**
+	 * Register
+	 * @param username String username
+	 * @param password String password
+	 */
 	public static void register(String username, String password) {
 		DBUtil db = new DBUtil();
 		db.insert("INSERT INTO USER (USERNAME, PASSWORD) VALUES ('" + username + "', '" + password + "')");
 		db.close();
 	}
 
+	/**
+	 * Get a user by a user's id
+	 * @param id User's id
+	 * @return Instance of User model
+	 */
 	public static User getUserByID(int id) {
 		DBUtil db = new DBUtil();
 		ResultSet rs = db.select("SELECT rowid, * FROM USER WHERE ROWID = " + id);
@@ -112,6 +153,11 @@ public class User implements Comparable<User> {
 		return user;
 	}
 
+	/**
+	 * Get user by the username
+	 * @param username String username
+	 * @return Instance of User model
+	 */
 	public static User getUserByUsername(String username) {
 		DBUtil db = new DBUtil();
 		ResultSet rs = db.select("SELECT rowid, * FROM USER WHERE USERNAME = '" + username + "';");
@@ -135,25 +181,50 @@ public class User implements Comparable<User> {
 		return user;
 	}
 
+	/**
+	 * Check if current user is friend of another user
+	 * @param anotherUser User model of another user
+	 * @return Boolean flag of the result
+	 */
 	public boolean isFriendOf(User anotherUser) {
 		return this.getFriendsList(0).contains(anotherUser);
 	}
 
+	/**
+	 * Check if current user has sent a add friend request to another user
+	 * @param anotherUser User model of another user
+	 * @return Boolean flag of the result
+	 */
 	public boolean hasSentFriendRequest(User anotherUser) {
 		String key = Global.getInstance().getProperty("newAddFriendRequestPrefix") + anotherUser.getID();
 		return Cache.getInstance().contains(key, String.valueOf(this.id));
 	}
 
+	/**
+	 * Send message to another user
+	 * @param content String content of the message
+	 * @param receiverID Receiver's user id
+	 * @param sendTimeStamp	Send timestamp
+	 * @return The Message model of the message just sent
+	 */
 	public Message sendMessage(String content, int receiverID, Long sendTimeStamp) {
 		Message message = new Message(this.id, receiverID, content, sendTimeStamp);
 		message.send();
 		return message;
 	}
 
+	/**
+	 * Accept a add friend request
+	 * @param acceptedUser User model of accepted user
+	 */
 	public void acceptFriend(User acceptedUser) {
 		Friend.acceptFriend(this.id, acceptedUser.getID());
 	}
 
+	/**
+	 * Reject a add friend request
+	 * @param rejectedUser User model of rejected user
+	 */
 	public void rejectFriend(User rejectedUser) {
 		Friend.rejectFriend(this.id, rejectedUser.getID());
 	}
@@ -162,7 +233,11 @@ public class User implements Comparable<User> {
 		return "<User: " + this.id + ">";
 	}
 
-	// compare only by it's id
+	/**
+	 * If two user's ids are same, they are the same user
+	 * @param o Another instance of User model class
+	 * @return Boolean flag of the result
+	 */
 	@Override
 	public int compareTo(User o) {
 		return this.id - o.getID();
@@ -181,6 +256,9 @@ public class User implements Comparable<User> {
 		return Objects.hash(id, username, password);
 	}
 
+	/**
+	 * Logout and remove current user from the logined user set
+	 */
     public void logout() {
 		String cacheKey = Global.getInstance().getProperty("loginUsersPrefix");
 		Cache.getInstance().sRem(cacheKey, String.valueOf(this.id));

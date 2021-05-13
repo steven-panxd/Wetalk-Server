@@ -14,7 +14,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 
+/**
+ * Main controller of the project
+ */
 public class MainController {
+    /**
+     * Main loop of the main controller
+     * Start the server and waiting for connection/requests from clients
+     * If received a request, send it to router
+     */
     public void mainLoop() {
         Server server = new Server() {
             protected Connection newConnection () {
@@ -92,6 +100,9 @@ public class MainController {
         server.start();
     }
 
+    /**
+     * Customized connection that can store some important information
+     */
     static class ChatConnection extends Connection {
         public String address;
         public int port;

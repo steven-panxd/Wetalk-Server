@@ -13,6 +13,11 @@ import java.util.List;
 
 public class UserController {
 
+    /**
+     * Get generic succeed response
+     * @param data The data that want to send back to client
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> getGenericSucceedResponse(String data) {
         HashMap<String, String> response = new HashMap<>();
         response.put("status", Global.getInstance().getProperty("succeedPrefix"));
@@ -20,6 +25,11 @@ public class UserController {
         return response;
     }
 
+    /**
+     * Get generic fail response
+     * @param message Error message
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> getGenericFailResponse(String message) {
         HashMap<String, String> response = new HashMap<>();
         HashMap<String, String> responseData = new HashMap<>();
@@ -29,6 +39,12 @@ public class UserController {
         return response;
     }
 
+    /**
+     * Register request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> register(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         String username = requestData.getOrDefault("username", "");
         String password = requestData.getOrDefault("password", "");
@@ -52,6 +68,12 @@ public class UserController {
         return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
+    /**
+     * Login request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> login(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         String username = requestData.get("username");
         String password = requestData.get("password");
@@ -77,6 +99,11 @@ public class UserController {
         return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
+    /**
+     * Logout request handler
+     * @param conn Connection from client
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> logout(MainController.ChatConnection conn) {
         conn.user.logout();
         return UserController.getGenericSucceedResponse("");
@@ -102,6 +129,12 @@ public class UserController {
         return UserController.getGenericSucceedResponse("");
     }
 
+    /**
+     * Add friend request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> addFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         String friendUsername = requestData.get("friendUsername");
         User friend = User.getUserByUsername(friendUsername);
@@ -122,6 +155,11 @@ public class UserController {
         }
     }
 
+    /**
+     * Get friend list request handler
+     * @param conn Connection from client
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> getFriendList(MainController.ChatConnection conn) {
         ArrayList<User> friendList = conn.user.getFriendsList(0);
         HashMap<String, String> responseData = new HashMap<>();
@@ -129,6 +167,11 @@ public class UserController {
         return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
+    /**
+     * Get latest data request handler
+     * @param conn Connection from client
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> getLatestData(MainController.ChatConnection conn) {
         String messageKey = Global.getInstance().getProperty("newMessageCachePrefix") + conn.user.getID();
         ArrayList<Message> newMessages = new ArrayList<>();
@@ -179,6 +222,12 @@ public class UserController {
         return UserController.getGenericSucceedResponse(Json.getInstance().toJson(responseData));
     }
 
+    /**
+     * Accept a friend request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> acceptFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         int acceptedFriendID = Integer.parseInt(requestData.get("acceptedFriendID"));
         User acceptedUser = User.getUserByID(acceptedFriendID);
@@ -186,6 +235,12 @@ public class UserController {
         return UserController.getGenericSucceedResponse("");
     }
 
+    /**
+     * Reject a friend request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> rejectFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         int acceptedFriendID = Integer.parseInt(requestData.get("rejectedFriendID"));
         User rejectedUser = User.getUserByID(acceptedFriendID);
@@ -193,6 +248,12 @@ public class UserController {
         return UserController.getGenericSucceedResponse("");
     }
 
+    /**
+     * Delete a friend request handler
+     * @param conn Connection from client
+     * @param requestData Request data
+     * @return A HashMap data for Router to warp
+     */
     public static HashMap<String, String> deleteFriend(MainController.ChatConnection conn, HashMap<String, String> requestData) {
         int deletedFriendID = Integer.parseInt(requestData.get("deletedFriendID"));
         User deletedFriend = User.getUserByID(deletedFriendID);

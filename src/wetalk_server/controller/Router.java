@@ -6,7 +6,18 @@ import wetalk_server.utils.Json;
 
 import java.util.HashMap;
 
+/**
+ * Router of the server
+ * Cast requests from clients to different handlers by requestName
+ * Warp and send response back to client eventually
+ */
 public class Router {
+    /**
+     * Cast requests from clients to different handlers by requestName
+     * Warp and send response back to client eventually
+     * @param connection Connection from a client
+     * @param requestData Content of this request
+     */
     public static void castRequest(MainController.ChatConnection connection, HashMap<String, String> requestData) {
         String jsonData = requestData.getOrDefault("data", null);
         HashMap<String, String> mapData = null;

@@ -9,7 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
+/**
+ * Friend model
+ * Describe the relationship of two users
+ * If two users are friends, there will be two rows of data in the database which one of the
+ */
 public class Friend {
+    /**
+     * Get all friends from a user's id
+     * @param userID User's id
+     * @param limit Limitation of number returns
+     * @param pageNum The page number of the limitation
+     * @return Return a list of User model
+     */
     public static ArrayList<User> getFriends(int userID, int limit, int pageNum) {
         DBUtil db = new DBUtil();
         ResultSet rs1 = db.select("SELECT * FROM FRIEND WHERE USER_ID = " + userID +";");
@@ -54,7 +66,11 @@ public class Friend {
         return friendList;
     }
 
-    // return the newest friend list
+    /**
+     * Create a new relationship between two users (add friend)
+     * @param userID User's id
+     * @param friendID Friend's user id
+     */
     public static void addFriend(int userID, int friendID) {
         DBUtil db = new DBUtil();
         db.insert("INSERT INTO FRIEND (USER_ID,FRIEND_ID)" +
@@ -62,7 +78,11 @@ public class Friend {
         db.close();
     }
 
-    // return the newest friend list
+    /**
+     * Delete a relationship between two users (delete friend)
+     * @param userID User's id
+     * @param friendID Friend's user id
+     */
     public static void deleteFriend(int userID, int friendID) {
         DBUtil db = new DBUtil();
         db.delete("DELETE FROM FRIEND WHERE USER_ID = " + userID + " AND FRIEND_ID = " + friendID);
@@ -70,12 +90,22 @@ public class Friend {
         db.close();
     }
 
+    /**
+     * Create a new relationship between two users (accepted a friend request)
+     * @param userID User's id
+     * @param friendID Friend's user id
+     */
     public static void acceptFriend(int userID, int friendID) {
         Friend.addFriend(userID, friendID);
         String acceptFriendCacheKey = Global.getInstance().getProperty("newAcceptFriendPrefix") + friendID;
         Cache.getInstance().push(acceptFriendCacheKey, String.valueOf(userID));
     }
 
+    /**
+     * Delete a relationship between two users (rejected a friend request)
+     * @param userID User's id
+     * @param friendID Friend's user id
+     */
     public static void rejectFriend(int userID, int friendID) {
         Friend.deleteFriend(friendID, userID);
         String rejectFriendCacheKey = Global.getInstance().getProperty("newRejectFriendPrefix") + friendID;

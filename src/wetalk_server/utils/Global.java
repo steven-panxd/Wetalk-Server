@@ -5,13 +5,16 @@ import wetalk_server.App;
 import java.io.*;
 import java.util.Properties;
 
-/*
-Singleton Pattern
-Global Constance for the program
+/**
+ * Global Constance for the program
+ * Singleton design pattern
  */
 public class Global extends Properties {
     private final static Global instance = new Global();
 
+    /**
+     * Constructor of Global class
+     */
     private Global() {
         Properties props = new Properties();
 
@@ -28,5 +31,9 @@ public class Global extends Properties {
         }
     }
 
+    /**
+     * Return an instance of Cache class
+     * @return An instance of Cache class
+     */
     public static Global getInstance() { return Global.instance; }
 }
