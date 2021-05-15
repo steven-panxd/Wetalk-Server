@@ -3,7 +3,7 @@ A simple chat application on Java. (Server side)
 
 # Dependencies
 #### All required jar files are in libs folder
-- [Kyronet](https://github.com/EsotericSoftware/kryonet "Kyronet") (Java TCP/UDP server/client library)
+- [Kryonet](https://github.com/EsotericSoftware/kryonet "Kryonet") (Java TCP/UDP server/client library)
 - [Gson](https://github.com/google/gson "Gson") (Json serializer)
 - [Java-JWT](https://github.com/auth0/java-jwt "Java-JWT") (Jason Web Token generator)
 - [SQLite](https://www.sqlite.org/index.html "SQLite") and [SQLite JDBC](https://github.com/xerial/sqlite-jdbc "SQLite JDBC") (Database)
